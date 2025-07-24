@@ -1,0 +1,154 @@
+1. !pip install roboflow
+
+2. from roboflow import Roboflow
+   rf = Roboflow(api_key="jlKhLj7rO8oSJuAE1JRX")
+   project = rf.workspace("sri-t8uap").project("fod-detection-giwaz")
+   version = project.version(1)
+   dataset = version.download("yolov8")
+
+3. !pip install ultralytics
+
+4. import os
+
+   dataset_path = "/kaggle/working/FOD-DETECTION-1"  # Change if needed
+
+   print("Dataset Files:", os.listdir(dataset_path))
+   print("Train Images:", len(os.listdir(f"{dataset_path}/train/images")))
+   print("Train Labels:", len(os.listdir(f"{dataset_path}/train/labels")))
+   print("Validation Images:", len(os.listdir(f"{dataset_path}/valid/images")))
+   print("Validation Labels:", len(os.listdir(f"{dataset_path}/valid/labels")))
+
+5. from ultralytics import YOLO
+
+6. import os
+   dataset_path = "/kaggle/working/FOD-DETECTION-1"
+   print("Dataset Files:", os.listdir(dataset_path))
+
+7. dataset_path = "/kaggle/working/FOD-DETECTION-1"  # Change if needed
+
+   yaml_content = f"""
+   path: {dataset_path}
+   train: train/images
+   val: valid/images
+   test: test/images  # Remove this if no test set
+    
+   nc: 1  # Number of classes (1 since you have only 'FOD')
+   names: ["FOD"]  # Replace with actual class names
+   """
+
+   with open(f"{dataset_path}/data.yaml", "w") as f:
+      f.write(yaml_content.strip())
+
+   print("✅ Corrected data.yaml created successfully!")
+  
+8. !cat /kaggle/working/FOD-DETECTION-1/data.yaml
+
+9. import torch
+   print("CUDA Available:", torch.cuda.is_available())
+   print("Number of GPUs:", torch.cuda.device_count())
+
+10. from ultralytics import YOLO
+    import os
+
+    # Step 1: Load YOLOv8 Nano model
+    model = YOLO("yolov8n.pt")
+
+    # Step 2: Start training
+    results = model.train(
+        data="/kaggle/working/FOD-DETECTION-1/data.yaml", 
+        epochs=100, 
+        imgsz=640, 
+        device='cuda'
+     )
+
+     # Step 3: Get path to best weights
+     best_model_path = os.path.join(model.trainer.save_dir, "weights", "best.pt")
+     print(f"✅ Training complete! Best model saved at: {best_model_path}")
+
+11. !find /kaggle -name "best.pt"
+
+12. model = YOLO("/kaggle/working/runs/detect/train/weights/best.pt")
+
+13. from ultralytics import YOLO
+
+    # Load the trained model
+    model = YOLO("/kaggle/working/runs/detect/train/weights/best.pt")
+
+    # Evaluate performance on the validation set
+    metrics = model.val()
+
+14. import os
+    from IPython.display import Image, display
+
+    # Replace with the actual prediction folder path
+    output_dir = "runs/detect/val"
+    predicted_files = os.listdir(output_dir)
+
+    # Display the first few predicted images
+    for file in predicted_files[:3]:
+       display(Image(filename=os.path.join(output_dir, file)))
+
+15. results = model.val()
+
+16. !find /kaggle/working/FOD-DETECTION-1/test
+
+17. import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    cm = results.confusion_matrix.matrix
+    labels = list(results.names.values())
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='g', xticklabels=labels, yticklabels=labels,     cmap="Blues")
+    plt.title("YOLOv8 Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.show()
+
+18. !find /kaggle/working -name results.png
+
+19. from IPython.display import Image, display
+
+    # Use the actual path from your find command
+    display(Image(filename="/kaggle/working/runs/detect/train/results.png"))
+
+20. print("📊 Model Evaluation Metrics:")
+    print(f"🔸 Precision: {results.box.mp:.4f}")        # ✅ No ()
+    print(f"🔸 Recall: {results.box.mr:.4f}")           # ✅ No ()
+    print(f"🔸 mAP@0.5: {results.box.map50:.4f}")       # ✅ No ()
+    print(f"🔸 mAP@0.5:0.95: {results.box.map:.4f}")    # ✅ No ()
+
+21. for i, class_name in results.names.items():
+        p, r, ap50, map = results.box.class_result(i)
+        print(f"🔹 {class_name}: Precision={p:.2f}, Recall={r:.2f}, mAP@0.5={ap50:.2f},         mAP@0.5:0.95={map:.2f}")
+
+22. for i, class_name in results.names.items():
+        precision, recall, ap50, ap = results.box.class_result(i)
+        print(f"📌 {class_name}:")
+        print(f"   Precision: {precision:.2f}")
+        print(f"   Recall: {recall:.2f}")
+        print(f"   mAP@0.5: {ap50:.2f}")
+        print(f"   mAP@0.5:0.95: {ap:.2f}")
+        print()
+
+23. from ultralytics import YOLO
+    import os
+
+    # Load your trained model (replace 'runs/detect/train/weights/best.pt' with your actual path)
+    model = YOLO('/kaggle/working/runs/detect/train/weights/best.pt')
+ 
+    # Path to test images
+    test_images_dir = f"{dataset_path}/test/images"
+
+    # Run predictions on all test images
+    results = model.predict(source=test_images_dir, save=True, conf=0.25)  # Adjust conf threshold as needed
+
+24. import IPython.display as display
+    from PIL import Image
+
+    # Show a few predicted images
+    pred_folder = "runs/detect/predict"
+    for img_file in os.listdir(pred_folder)[:50]:
+        display.display(Image.open(f"{pred_folder}/{img_file}"))
+
+
